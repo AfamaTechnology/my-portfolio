@@ -1,11 +1,3 @@
-/**
-* Template Name: iPortfolio
-* Template URL: https://bootstrapmade.com/iportfolio-bootstrap-portfolio-websites-template/
-* Updated: Jun 29 2024 with Bootstrap v5.3.3
-* Author: BootstrapMade.com
-* License: https://bootstrapmade.com/license/
-*/
-
 (function() {
   "use strict";
 
@@ -45,15 +37,7 @@
     });
   });
 
-  /**
-   * Preloader
-   */
-  const preloader = document.querySelector('#preloader');
-  if (preloader) {
-    window.addEventListener('load', () => {
-      preloader.remove();
-    });
-  }
+  // Preloader removed — spinner element was removed from the HTML to avoid blocking visuals.
 
   /**
    * Scroll top button
@@ -103,6 +87,35 @@
       backSpeed: 50,
       backDelay: 2000
     });
+  }
+
+  /**
+   * Hero image rotator - cycles through images in the `ayoub/` folder
+   */
+  const heroImg = document.getElementById('hero-img');
+  if (heroImg) {
+    const heroImages = [
+      'ayoub/35.jpg',
+      'ayoub/41.jpg',
+      'ayoub/43.jpg',
+      'ayoub/38.jpg',
+      'ayoub/22.jpg',
+      'ayoub/18.jpg',
+      'ayoub/background.jpg'
+    ];
+    let heroIndex = 0;
+    // Preload images
+    heroImages.forEach(src => { const img = new Image(); img.src = src; });
+
+    // Cycle images every 5 seconds with a short fade
+    setInterval(() => {
+      heroImg.classList.add('fade-out');
+      setTimeout(() => {
+        heroIndex = (heroIndex + 1) % heroImages.length;
+        heroImg.src = heroImages[heroIndex];
+        heroImg.classList.remove('fade-out');
+      }, 900);
+    }, 5000);
   }
 
   /**
@@ -225,5 +238,32 @@
   }
   window.addEventListener('load', navmenuScrollspy);
   document.addEventListener('scroll', navmenuScrollspy);
+
+  /**
+   * CV preview modal handler
+   */
+  (function() {
+    const previewButtons = document.querySelectorAll('.preview-cv');
+    const modalEl = document.getElementById('cvPreviewModal');
+    let bsModal = null;
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      bsModal = new bootstrap.Modal(modalEl);
+      const iframe = document.getElementById('cv-preview-frame');
+
+      previewButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const src = btn.getAttribute('data-src');
+          if (iframe && src) {
+            iframe.src = src;
+          }
+          bsModal.show();
+        });
+      });
+
+      modalEl.addEventListener('hidden.bs.modal', () => {
+        if (iframe) iframe.src = '';
+      });
+    }
+  })();
 
 })();
