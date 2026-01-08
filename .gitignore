@@ -1,0 +1,9 @@
+# Security: never commit private keys
+keysave
+keysave.pub
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+Thumbs.db

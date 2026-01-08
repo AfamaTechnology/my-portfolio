@@ -263,12 +263,18 @@
     if (modalEl && typeof bootstrap !== 'undefined') {
       bsModal = new bootstrap.Modal(modalEl);
       const iframe = document.getElementById('cv-preview-frame');
+      const downloadBtn = document.getElementById('cv-download-btn');
 
       previewButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const src = btn.getAttribute('data-src');
-          if (iframe && src) {
-            iframe.src = src;
+          e.preventDefault();
+
+          const src = btn.getAttribute('data-src') || btn.getAttribute('href');
+          if (iframe && src) iframe.src = src;
+
+          if (downloadBtn && src) {
+            downloadBtn.href = src;
+            downloadBtn.setAttribute('download', '');
           }
           bsModal.show();
         });
@@ -276,6 +282,7 @@
 
       modalEl.addEventListener('hidden.bs.modal', () => {
         if (iframe) iframe.src = '';
+        if (downloadBtn) downloadBtn.href = '#';
       });
     }
   })();
