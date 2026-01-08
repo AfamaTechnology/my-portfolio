@@ -104,8 +104,19 @@
       'ayoub/background.jpg'
     ];
     let heroIndex = 0;
-    // Preload images
-    heroImages.forEach(src => { const img = new Image(); img.src = src; });
+    // Avoid preloading every hero image on initial load (saves bandwidth on first paint).
+    const preload = (src) => {
+      const img = new Image();
+      img.src = src;
+    };
+
+    // Start from current src if it matches the list
+    const currentSrc = heroImg.getAttribute('src');
+    const foundIndex = heroImages.indexOf(currentSrc);
+    if (foundIndex >= 0) heroIndex = foundIndex;
+
+    // Preload just the next image
+    preload(heroImages[(heroIndex + 1) % heroImages.length]);
 
     // Cycle images every 5 seconds with a short fade
     setInterval(() => {
@@ -114,6 +125,9 @@
         heroIndex = (heroIndex + 1) % heroImages.length;
         heroImg.src = heroImages[heroIndex];
         heroImg.classList.remove('fade-out');
+
+        // Preload the next image after switching
+        preload(heroImages[(heroIndex + 1) % heroImages.length]);
       }, 900);
     }, 5000);
   }
