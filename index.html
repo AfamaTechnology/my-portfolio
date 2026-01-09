@@ -233,28 +233,46 @@ Completely Form what we call a DIGITAL EVANGELISM.</p>
         <h2>Resume</h2>
         <p>Here you will find my PDF resumes available for DOWNLOAD, providing a detailed overview of my skills, experience, and professional background for your review and reference.</p>
         <a href="ayoub/CV_Ayubu_faustine_magashi.pdf" class="btn btn-sm btn-outline-secondary btn-primary" style="color: aliceblue;" target="_blank" rel="noopener">Open General Resume</a>
+        <a href="ayoub/CV_Ayubu_faustine_magashi.pdf" class="btn btn-sm btn-outline-secondary btn-primary" style="color: aliceblue;" download>Download General Resume</a>
 
-        <div class="mt-4" id="general-resume-preview">
-          <iframe
-            src="ayoub/CV_Ayubu_faustine_magashi.pdf"
-            title="General Resume (PDF)"
-            style="width: 100%; height: 80vh; border: 0;"
-            loading="lazy">
-          </iframe>
+        <div class="d-block d-md-none mt-3">
+          <p class="mb-0">Note: Some phones can’t display embedded PDFs. Use the buttons above to open or download.</p>
+        </div>
+
+        <div class="mt-4 d-none d-md-block" id="general-resume-preview" data-pdf-preview data-pdf-url="ayoub/CV_Ayubu_faustine_magashi.pdf">
+          <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-primary" data-pdf-prev disabled>Previous</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-pdf-next disabled>Next</button>
+            <div class="ms-auto small text-muted">
+              Page <span data-pdf-page-num>1</span> / <span data-pdf-page-count>–</span>
+            </div>
+          </div>
+          <div class="border rounded overflow-hidden" data-pdf-canvas-wrap>
+            <canvas data-pdf-canvas style="width: 100%; height: auto; display: block;"></canvas>
+          </div>
+          <p class="mt-2 mb-0" data-pdf-status>Loading preview…</p>
           <p class="mt-2">
             If the PDF does not display, <a href="ayoub/CV_Ayubu_faustine_magashi.pdf" target="_blank" rel="noopener">open it in a new tab</a>.
           </p>
         </div>
-        <br><br>
-        <a href="ayoub/Digital_Media%20_CV_Ayubu_Faustine_Magashi.pdf" class="btn btn-sm btn-outline-secondary btn-primary" style="color: aliceblue;" target="_blank" rel="noopener">Open Digital Evangelism Projects Portfolio</a>
 
-        <div class="mt-4" id="digital-portfolio-preview">
-          <iframe
-            src="ayoub/Digital_Media%20_CV_Ayubu_Faustine_Magashi.pdf"
-            title="Digital Evangelism Projects Portfolio (PDF)"
-            style="width: 100%; height: 80vh; border: 0;"
-            loading="lazy">
-          </iframe>
+        <hr class="my-4 d-none d-md-block">
+
+        <a href="ayoub/Digital_Media%20_CV_Ayubu_Faustine_Magashi.pdf" class="btn btn-sm btn-outline-secondary btn-primary" style="color: aliceblue;" target="_blank" rel="noopener">Open Digital Evangelism Projects Portfolio</a>
+        <a href="ayoub/Digital_Media%20_CV_Ayubu_Faustine_Magashi.pdf" class="btn btn-sm btn-outline-secondary btn-primary" style="color: aliceblue;" download>Download Digital Evangelism Projects Portfolio</a>
+
+        <div class="mt-4 d-none d-md-block" id="digital-portfolio-preview" data-pdf-preview data-pdf-url="ayoub/Digital_Media%20_CV_Ayubu_Faustine_Magashi.pdf">
+          <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-primary" data-pdf-prev disabled>Previous</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-pdf-next disabled>Next</button>
+            <div class="ms-auto small text-muted">
+              Page <span data-pdf-page-num>1</span> / <span data-pdf-page-count>–</span>
+            </div>
+          </div>
+          <div class="border rounded overflow-hidden" data-pdf-canvas-wrap>
+            <canvas data-pdf-canvas style="width: 100%; height: auto; display: block;"></canvas>
+          </div>
+          <p class="mt-2 mb-0" data-pdf-status>Loading preview…</p>
           <p class="mt-2">
             If the PDF does not display, <a href="ayoub/Digital_Media%20_CV_Ayubu_Faustine_Magashi.pdf" target="_blank" rel="noopener">open it in a new tab</a>.
           </p>
@@ -571,7 +589,7 @@ Completely Form what we call a DIGITAL EVANGELISM.</p>
           </p>
           </div>
           <div class="col-md-6">
-            <p><strong>Pr Baraka Nchama</strong><br>
+            <p><strong>Pr Baraka Boniphace Nchama</strong><br>
             Executive Secretary,<br>
             North Mara Field<br>
             Email: <a href="mailto:nchamab@nmfadventist.or.tz">nchamab@nmfadventist.or.tz</a><br>
@@ -765,6 +783,9 @@ Completely Form what we call a DIGITAL EVANGELISM.</p>
   <script src="assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
   <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
   <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- PDF.js (for Resume previews on desktop/tablet) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" referrerpolicy="no-referrer"></script>
 
   <!-- Main JS File -->
   <script src="assets/js/main.js"></script>

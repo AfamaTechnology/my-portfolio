@@ -254,6 +254,166 @@
   document.addEventListener('scroll', navmenuScrollspy);
 
   /**
+   * PDF previews (desktop/tablet): independent viewers with Prev/Next.
+   */
+  (function initPdfPreviews() {
+    const previewEls = document.querySelectorAll('[data-pdf-preview][data-pdf-url]');
+    if (!previewEls.length) return;
+
+    const isFileProtocol = window.location && window.location.protocol === 'file:';
+
+    if (typeof pdfjsLib === 'undefined') {
+      previewEls.forEach((viewerEl) => {
+        const statusEl = viewerEl.querySelector('[data-pdf-status]');
+        const prevBtn = viewerEl.querySelector('[data-pdf-prev]');
+        const nextBtn = viewerEl.querySelector('[data-pdf-next]');
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        if (statusEl) statusEl.textContent = 'Preview unavailable (PDF viewer did not load). Use the Open button above.';
+      });
+      return;
+    }
+
+    try {
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    } catch (e) {
+      // If worker configuration fails, pdf.js will still try its defaults.
+    }
+
+    const debounce = (fn, wait) => {
+      let t = null;
+      return (...args) => {
+        if (t) window.clearTimeout(t);
+        t = window.setTimeout(() => fn(...args), wait);
+      };
+    };
+
+    previewEls.forEach((viewerEl) => {
+      const url = viewerEl.getAttribute('data-pdf-url');
+      const canvasWrap = viewerEl.querySelector('[data-pdf-canvas-wrap]');
+      const canvas = viewerEl.querySelector('[data-pdf-canvas]');
+      const prevBtn = viewerEl.querySelector('[data-pdf-prev]');
+      const nextBtn = viewerEl.querySelector('[data-pdf-next]');
+      const pageNumEl = viewerEl.querySelector('[data-pdf-page-num]');
+      const pageCountEl = viewerEl.querySelector('[data-pdf-page-count]');
+      const statusEl = viewerEl.querySelector('[data-pdf-status]');
+
+      if (!url || !canvasWrap || !canvas || !prevBtn || !nextBtn || !pageNumEl || !pageCountEl) return;
+
+      let pdfDoc = null;
+      let pageNum = 1;
+      let renderTask = null;
+
+      const setStatus = (text) => {
+        if (!statusEl) return;
+        statusEl.textContent = text;
+      };
+
+      const updateUi = () => {
+        pageNumEl.textContent = String(pageNum);
+        pageCountEl.textContent = pdfDoc ? String(pdfDoc.numPages) : '–';
+        prevBtn.disabled = !pdfDoc || pageNum <= 1;
+        nextBtn.disabled = !pdfDoc || pageNum >= pdfDoc.numPages;
+      };
+
+      const renderPage = async (num) => {
+        if (!pdfDoc) return;
+
+        if (renderTask) {
+          try {
+            renderTask.cancel();
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        setStatus('Loading page…');
+        updateUi();
+
+        const page = await pdfDoc.getPage(num);
+
+        const targetWidth = canvasWrap.clientWidth || viewerEl.clientWidth || 800;
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = targetWidth / unscaledViewport.width;
+        const dpr = window.devicePixelRatio || 1;
+        const viewport = page.getViewport({ scale });
+        const viewportDpr = page.getViewport({ scale: scale * dpr });
+
+        const ctx = canvas.getContext('2d');
+        canvas.width = Math.floor(viewportDpr.width);
+        canvas.height = Math.floor(viewportDpr.height);
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+
+        renderTask = page.render({
+          canvasContext: ctx,
+          viewport: viewportDpr
+        });
+
+        try {
+          await renderTask.promise;
+          setStatus('');
+        } catch (err) {
+          if (err && err.name === 'RenderingCancelledException') return;
+          setStatus('Preview failed to load. Use the Open button above.');
+        } finally {
+          renderTask = null;
+          updateUi();
+        }
+      };
+
+      prevBtn.addEventListener('click', () => {
+        if (!pdfDoc || pageNum <= 1) return;
+        pageNum -= 1;
+        renderPage(pageNum);
+      });
+
+      nextBtn.addEventListener('click', () => {
+        if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+        pageNum += 1;
+        renderPage(pageNum);
+      });
+
+      const onResize = debounce(() => {
+        if (!pdfDoc) return;
+        renderPage(pageNum);
+      }, 150);
+      window.addEventListener('resize', onResize);
+
+      // Load PDF
+      if (isFileProtocol) {
+        setStatus('Preview can’t load when opened as a file. Open this site via a local server (e.g., VS Code Live Server) then refresh, or use the Open button above.');
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        pageNumEl.textContent = '1';
+        pageCountEl.textContent = '–';
+        return;
+      }
+
+      setStatus('Loading preview…');
+      prevBtn.disabled = true;
+      nextBtn.disabled = true;
+      pageNumEl.textContent = '1';
+      pageCountEl.textContent = '–';
+
+      pdfjsLib.getDocument(url).promise
+        .then((doc) => {
+          pdfDoc = doc;
+          pageNum = 1;
+          updateUi();
+          return renderPage(pageNum);
+        })
+        .catch(() => {
+          setStatus('Preview failed to load. Use the Open button above.');
+          pdfDoc = null;
+          updateUi();
+        });
+    });
+  })();
+
+  /**
    * CV preview modal handler
    */
   (function() {
