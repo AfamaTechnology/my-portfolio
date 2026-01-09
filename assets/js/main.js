@@ -306,6 +306,8 @@
       let pageNum = 1;
       let renderTask = null;
       let loadTimedOut = false;
+      let started = false;
+      let loadingTask = null;
 
       const setStatus = (text) => {
         if (!statusEl) return;
@@ -335,10 +337,13 @@
 
         const page = await pdfDoc.getPage(num);
 
-        const targetWidth = canvasWrap.clientWidth || viewerEl.clientWidth || 800;
+        // Performance: cap target render width so big screens don't render huge canvases.
+        const wrapWidth = canvasWrap.clientWidth || viewerEl.clientWidth || 800;
+        const targetWidth = Math.min(wrapWidth, 920);
         const unscaledViewport = page.getViewport({ scale: 1 });
         const scale = targetWidth / unscaledViewport.width;
-        const dpr = window.devicePixelRatio || 1;
+        // Performance: cap DPR so high-density screens don't render extremely large bitmaps.
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         const viewport = page.getViewport({ scale });
         const viewportDpr = page.getViewport({ scale: scale * dpr });
 
@@ -383,45 +388,93 @@
       }, 150);
       window.addEventListener('resize', onResize);
 
-      // Load PDF
-      if (isFileProtocol) {
-        setStatus('Preview can’t load when opened as a file. Open this site via a local server (e.g., VS Code Live Server) then refresh, or use the Open button above.');
+      const loadPdf = ({ disableWorker }) => {
+        if (loadingTask) {
+          try { loadingTask.destroy(); } catch (e) { /* ignore */ }
+          loadingTask = null;
+        }
+        loadingTask = pdfjsLib.getDocument({ url, disableWorker });
+        return loadingTask.promise;
+      };
+
+      const startLoad = () => {
+        if (started) return;
+        started = true;
+
+        // Load PDF
+        if (isFileProtocol) {
+          setStatus('Preview can’t load when opened as a file. Open this site via a local server (e.g., VS Code Live Server) then refresh, or use the Open button above.');
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
+          pageNumEl.textContent = '1';
+          pageCountEl.textContent = '–';
+          return;
+        }
+
+        setStatus('Loading preview…');
         prevBtn.disabled = true;
         nextBtn.disabled = true;
         pageNumEl.textContent = '1';
         pageCountEl.textContent = '–';
-        return;
+
+        // Try faster worker mode first; if it stalls, fallback to no-worker mode.
+        const fallbackTimer = window.setTimeout(() => {
+          if (pdfDoc) return;
+          setStatus('Still loading… switching to compatibility mode.');
+          loadPdf({ disableWorker: true })
+            .then((doc) => {
+              pdfDoc = doc;
+              pageNum = 1;
+              updateUi();
+              return renderPage(pageNum);
+            })
+            .catch((err) => {
+              const details = err && (err.message || err.name) ? ` (${err.message || err.name})` : '';
+              setStatus(`Preview failed to load${details}. Use the Open button above.`);
+              pdfDoc = null;
+              updateUi();
+            });
+        }, 6000);
+
+        // Safety net: if loading hangs completely, show a helpful message.
+        window.setTimeout(() => {
+          if (pdfDoc) return;
+          loadTimedOut = true;
+          setStatus('Preview is taking too long to load. Use the Open button above.');
+        }, 15000);
+
+        loadPdf({ disableWorker: false })
+          .then((doc) => {
+            if (loadTimedOut) return;
+            window.clearTimeout(fallbackTimer);
+            pdfDoc = doc;
+            pageNum = 1;
+            updateUi();
+            return renderPage(pageNum);
+          })
+          .catch((err) => {
+            if (loadTimedOut) return;
+            window.clearTimeout(fallbackTimer);
+            const details = err && (err.message || err.name) ? ` (${err.message || err.name})` : '';
+            setStatus(`Preview failed to load${details}. Use the Open button above.`);
+            pdfDoc = null;
+            updateUi();
+          });
+      };
+
+      // Performance: only start loading when the preview is near the viewport.
+      if (typeof IntersectionObserver !== 'undefined') {
+        setStatus('Preview will load when visible…');
+        const io = new IntersectionObserver((entries) => {
+          const entry = entries[0];
+          if (!entry || !entry.isIntersecting) return;
+          io.disconnect();
+          startLoad();
+        }, { root: null, threshold: 0.15, rootMargin: '200px 0px' });
+        io.observe(viewerEl);
+      } else {
+        startLoad();
       }
-
-      setStatus('Loading preview…');
-      prevBtn.disabled = true;
-      nextBtn.disabled = true;
-      pageNumEl.textContent = '1';
-      pageCountEl.textContent = '–';
-
-      // Safety net: if loading hangs, show a helpful message.
-      window.setTimeout(() => {
-        if (pdfDoc) return;
-        loadTimedOut = true;
-        setStatus('Preview is taking too long to load. Use the Open button above.');
-      }, 12000);
-
-      // Disable worker for maximum compatibility across hosts/browsers.
-      pdfjsLib.getDocument({ url, disableWorker: true }).promise
-        .then((doc) => {
-          if (loadTimedOut) return;
-          pdfDoc = doc;
-          pageNum = 1;
-          updateUi();
-          return renderPage(pageNum);
-        })
-        .catch((err) => {
-          if (loadTimedOut) return;
-          const details = err && (err.message || err.name) ? ` (${err.message || err.name})` : '';
-          setStatus(`Preview failed to load${details}. Use the Open button above.`);
-          pdfDoc = null;
-          updateUi();
-        });
     });
   })();
 
