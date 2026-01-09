@@ -305,6 +305,7 @@
       let pdfDoc = null;
       let pageNum = 1;
       let renderTask = null;
+      let loadTimedOut = false;
 
       const setStatus = (text) => {
         if (!statusEl) return;
@@ -398,15 +399,26 @@
       pageNumEl.textContent = '1';
       pageCountEl.textContent = '–';
 
-      pdfjsLib.getDocument(url).promise
+      // Safety net: if loading hangs, show a helpful message.
+      window.setTimeout(() => {
+        if (pdfDoc) return;
+        loadTimedOut = true;
+        setStatus('Preview is taking too long to load. Use the Open button above.');
+      }, 12000);
+
+      // Disable worker for maximum compatibility across hosts/browsers.
+      pdfjsLib.getDocument({ url, disableWorker: true }).promise
         .then((doc) => {
+          if (loadTimedOut) return;
           pdfDoc = doc;
           pageNum = 1;
           updateUi();
           return renderPage(pageNum);
         })
-        .catch(() => {
-          setStatus('Preview failed to load. Use the Open button above.');
+        .catch((err) => {
+          if (loadTimedOut) return;
+          const details = err && (err.message || err.name) ? ` (${err.message || err.name})` : '';
+          setStatus(`Preview failed to load${details}. Use the Open button above.`);
           pdfDoc = null;
           updateUi();
         });
